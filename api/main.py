@@ -1,7 +1,5 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional
+from flask import Flask, jsonify, request, abort
+from flask_cors import CORS
 from collections import deque
 import torch
 import numpy as np
@@ -9,15 +7,9 @@ import os
 from src.models.sign_model import ASLClassifier, ASLDynamicClassifier
 from src.data.preprocess import normalize_landmarks
 
-app = FastAPI(title="ASL Recognition API", description="Real-time ASL Alphabet Classification with Motion + Phrases")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = Flask("ASL Recognition API")
+app.config["DESCRIPTION"] = "Real-time ASL Alphabet Classification with Motion + Phrases"
+CORS(app)
 
 # --- Static model (A-Z static signs) ---
 static_model = ASLClassifier()
@@ -43,43 +35,30 @@ frame_buffer = deque(maxlen=SEQ_LEN)
 # --- Phrase state ---
 phrase_letters = []
 
-class Landmark(BaseModel):
-    x: float
-    y: float
-    z: float
 
-class LandmarkPayload(BaseModel):
-    landmarks: List[Landmark]
-
-class SequencePayload(BaseModel):
-    sequence: List[List[Landmark]]  # List of frames, each frame is 21 landmarks
-
-class PhraseAction(BaseModel):
-    action: str  # "add", "space", "backspace", "clear", "get"
-    letter: Optional[str] = None
-
-
-def _normalize_payload(landmarks: List[Landmark]):
-    lm_list = [{"x": lm.x, "y": lm.y, "z": lm.z} for lm in landmarks]
+def _normalize_payload(landmarks):
+    lm_list = [{"x": lm["x"], "y": lm["y"], "z": lm["z"]} for lm in landmarks]
     return normalize_landmarks(lm_list)
 
 
-@app.get("/")
+@app.route("/", methods=["GET"])
 def health_check():
-    return {
+    return jsonify({
         "status": "healthy",
         "static_model_loaded": os.path.exists(static_model_path),
         "dynamic_model_loaded": dynamic_model is not None,
-    }
+    })
 
 
-@app.post("/predict")
-async def predict(payload: LandmarkPayload):
+@app.route("/predict", methods=["POST"])
+def predict():
     """Predict a static sign from a single frame of 21 landmarks."""
-    if len(payload.landmarks) != 21:
-        raise HTTPException(status_code=400, detail="Must provide exactly 21 landmarks")
+    data = request.get_json()
+    landmarks = data.get("landmarks", [])
+    if len(landmarks) != 21:
+        abort(400, description="Must provide exactly 21 landmarks")
 
-    features = _normalize_payload(payload.landmarks)
+    features = _normalize_payload(landmarks)
     tensor = torch.FloatTensor(features).unsqueeze(0)
 
     with torch.no_grad():
@@ -87,24 +66,27 @@ async def predict(payload: LandmarkPayload):
         probs = torch.softmax(outputs, dim=1)
         conf, predicted = torch.max(probs, 1)
 
-    return {
+    return jsonify({
         "prediction": classes[predicted.item()],
         "confidence": float(conf.item()),
         "type": "static",
-    }
+    })
 
 
-@app.post("/predict_dynamic")
-async def predict_dynamic(payload: SequencePayload):
+@app.route("/predict_dynamic", methods=["POST"])
+def predict_dynamic():
     """Predict a dynamic/motion sign (J or Z) from a sequence of frames."""
     if dynamic_model is None:
-        raise HTTPException(status_code=503, detail="Dynamic model not loaded. Train it first.")
+        abort(503, description="Dynamic model not loaded. Train it first.")
+
+    data = request.get_json()
+    sequence = data.get("sequence", [])
 
     # Normalize each frame in the sequence
     seq = []
-    for frame in payload.sequence:
+    for frame in sequence:
         if len(frame) != 21:
-            raise HTTPException(status_code=400, detail="Each frame must have 21 landmarks")
+            abort(400, description="Each frame must have 21 landmarks")
         features = _normalize_payload(frame)
         seq.append(features)
 
@@ -123,30 +105,34 @@ async def predict_dynamic(payload: SequencePayload):
         probs = torch.softmax(outputs, dim=1)
         conf, predicted = torch.max(probs, 1)
 
-    return {
+    return jsonify({
         "prediction": DYNAMIC_CLASSES[predicted.item()],
         "confidence": float(conf.item()),
         "type": "dynamic",
-    }
+    })
 
 
-@app.post("/phrase")
-async def phrase(action: PhraseAction):
+@app.route("/phrase", methods=["POST"])
+def phrase():
     """Manage the phrase being built letter by letter."""
     global phrase_letters
 
-    if action.action == "add" and action.letter:
-        phrase_letters.append(action.letter)
-    elif action.action == "space":
+    data = request.get_json()
+    action = data.get("action")
+    letter = data.get("letter")
+
+    if action == "add" and letter:
+        phrase_letters.append(letter)
+    elif action == "space":
         phrase_letters.append(" ")
-    elif action.action == "backspace":
+    elif action == "backspace":
         if phrase_letters:
             phrase_letters.pop()
-    elif action.action == "clear":
+    elif action == "clear":
         phrase_letters = []
-    elif action.action == "get":
+    elif action == "get":
         pass  # Just return the current phrase
     else:
-        raise HTTPException(status_code=400, detail="Invalid action")
+        abort(400, description="Invalid action")
 
-    return {"phrase": "".join(phrase_letters)}
+    return jsonify({"phrase": "".join(phrase_letters)})

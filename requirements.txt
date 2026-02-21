@@ -1,8 +1,7 @@
 torch
 numpy
-fastapi
-uvicorn
-python-multipart
+flask
+flask-cors
 onnx
 onnxruntime
 pytest
