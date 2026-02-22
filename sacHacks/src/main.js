@@ -1,23 +1,127 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SignBridge — ASL Translator</title>
+import './css/style.css'
 
-  <!-- Google Fonts: DM Serif Display (headings) + DM Sans (body text) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+// Interval ID for the prediction polling loop
+let pollInterval = null;
 
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
+/**
+ * Opens the translator modal.
+ * Restarts the video feed (in case it stalled) and begins polling /prediction.
+ */
+function openDemo() {
+  document.getElementById("modal").classList.add("open");
 
-<!-- ── Navigation ─────────────────────────────────────────────────────────── -->
-<nav>
-  <div class="nav-logo">Sign<span>Bridge</span></div>
+  // Set the video src — the browser will connect to the MJPEG stream.
+  // Adding a timestamp prevents the browser from using a cached URL.
+  const img = document.getElementById("videoFeed");
+  img.src   = "/video_feed?" + Date.now();
+
+  // Poll the /prediction endpoint every 200ms to update the UI
+  pollInterval = setInterval(fetchPrediction, 200);
+}
+
+/**
+ * Closes the modal and stops the prediction polling loop.
+ */
+function closeDemo() {
+  document.getElementById("modal").classList.remove("open");
+  clearInterval(pollInterval);
+  pollInterval = null;
+}
+
+/**
+ * Closes the modal if the user clicks the dark overlay behind it
+ * (but not if they click inside the modal itself).
+ */
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById("modal")) {
+    closeDemo();
+  }
+}
+
+/**
+ * Fetches the latest prediction from Flask and updates the UI.
+ * Called every 200ms while the modal is open.
+ * Silently ignores errors (e.g. if the server isn't ready yet).
+ */
+async function fetchPrediction() {
+  try {
+    const res  = await fetch("/prediction");
+    const data = await res.json();
+    updateUI(data);
+  } catch (e) {
+    // Server not ready or network issue — skip this tick silently
+  }
+}
+
+/**
+ * Updates all UI elements with the latest prediction data.
+ *
+ * @param {Object} data - Response from /prediction:
+ *   { preview, conf, sentence, stable }
+ */
+function updateUI(data) {
+  const letterEl    = document.getElementById("predLetter");
+  const confEl      = document.getElementById("predConf");
+  const fillEl      = document.getElementById("stabilityFill");
+  const stableNumEl = document.getElementById("stableNum");
+  const sentenceEl  = document.getElementById("sentenceText");
+
+  // Update predicted letter and confidence text
+  if (data.preview) {
+    letterEl.textContent = data.preview;
+    letterEl.style.color = "var(--sage-d)";
+    confEl.textContent   = `${data.conf}% confidence`;
+  } else {
+    letterEl.textContent = "—";
+    letterEl.style.color = "var(--sand)";
+    confEl.textContent   = "waiting for hand...";
+  }
+
+  // Update stability progress bar width (0-100%)
+  fillEl.style.width      = data.stable + "%";
+  stableNumEl.textContent = data.stable + "%";
+
+  // Update sentence display
+  if (data.sentence) {
+    sentenceEl.textContent = data.sentence;
+    sentenceEl.classList.remove("empty");
+  } else {
+    sentenceEl.textContent = "Start signing...";
+    sentenceEl.classList.add("empty");
+  }
+}
+
+/**
+ * Sends a command to a Flask POST endpoint.
+ * Used by Space, Backspace, and Clear buttons.
+ *
+ * @param {string} cmd - "space", "backspace", or "clear"
+ */
+async function sendCmd(cmd) {
+  await fetch("/" + cmd, { method: "POST" });
+}
+
+/**
+ * Keyboard shortcuts so users don't have to click the buttons.
+ * Only active while the modal is open.
+ */
+document.addEventListener("keydown", (e) => {
+  // Do nothing if modal isn't open
+  if (!document.getElementById("modal").classList.contains("open")) return;
+
+  if (e.key === "Escape")     closeDemo();
+  if (e.key === " ")          { e.preventDefault(); sendCmd("space"); }
+  if (e.key === "Backspace")  sendCmd("backspace");
+  if (e.key === "c")          sendCmd("clear");
+});
+
+document.querySelector('#app').innerHTML = `
+  <!-- ── Navigation ─────────────────────────────────────────────────────────── -->
+<nav> 
+  <div class="nav-logo">Sign<span>Flow</span></div>
   <ul class="nav-links">
+    <li><a href="#welcome">Welcome</a></li>
+    <li><a href="#why">Why ASL</a></li>
     <li><a href="#history">History</a></li>
     <li><a href="#alphabet">Alphabet</a></li>
     <li><a href="#tips">Tips</a></li>
@@ -26,7 +130,7 @@
 </nav>
 
 <!-- ── Hero CHANGE LATER──────────────────────────────────────────────────────────────── -->
-<section class="hero" id="top">
+<section class="hero" id="welcome">
   <div class="hero-text">
     <span class="hero-tag">AI-powered ASL recognition</span>
     <h1>Hands that <em>speak</em>,<br>words that connect.</h1>
@@ -37,17 +141,20 @@
     </div>
   </div>
   <div class="hero-visual">
-    <div class="hero-sign-grid">
-      <div class="sign-tile"><span class="emoji"></span><span class="letter">I ♥ U</span></div>
-      <div class="sign-tile"><span class="emoji"></span><span class="letter">B</span></div>
-      <div class="sign-tile"><span class="emoji"></span><span class="letter">Y</span></div>
-      <div class="sign-tile"><span class="emoji"></span><span class="letter">F</span></div>
-      <div class="sign-tile"><span class="emoji"></span><span class="letter">V</span></div>
-      <div class="sign-tile"><span class="emoji"></span><span class="letter">A</span></div>
-      <div class="sign-tile"><span class="emoji"></span><span class="letter">W</span></div>
-      <div class="sign-tile"><span class="emoji"></span><span class="letter">S</span></div>
-    </div>
+    <img src="welcome.png" alt="Illustration of ASL" class="welcomeimg">
   </div>
+</section>
+
+<section class="hero" id="why">
+  <div class="hero-text">
+    <span class="section-tag">Why</span>
+    <h2 class="section-title">Why ASL?</h2>
+    <p class="section-sub">Many deaf people rely on translators for communication with others. For example, hospitals provide translators free of charge to assist in translating your symptoms to the doctor and relaying back what the doctor says. These translators make the situation of conversing with others manageable. However, translators cannot be by your side 24/7, and their lack of presence in everyday life can be felt. For example, it might be difficult for someone with hearing loss to ask where an item is located in the grocery store. That's why an ASL translator website/app would be an incredibly useful tool to deaf people, because their phone would act as their personal translator. This would allow deaf people to have more fluid conversations with others, reducing the problem of language barriers between hearing and non-hearing individuals.</p>
+  </div>
+  <div class="hero-visual">
+    <img src="why.png" alt="Illustration of ASL communication" class="whyimg">
+  </div>
+  
 </section>
 
 <!-- ── History Section ────────────────────────────────────────────────────── -->
@@ -254,7 +361,5 @@
 
   </div>
 </div>
+`
 
-<script src="script.js"></script>
-</body>
-</html> 
