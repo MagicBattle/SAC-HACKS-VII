@@ -1,0 +1,8 @@
+torch
+numpy
+flask
+flask-cors
+onnx
+onnxruntime
+pytest
+scikit-learn
