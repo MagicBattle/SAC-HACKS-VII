@@ -60,6 +60,13 @@
         .cursor { display:inline-block; width:2px; height:1.5rem; background:var(--primary); animation:blink 1s step-end infinite; margin-left:2px; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
+        /* Mode toggle */
+        .mode-toggle { display:flex; gap:0; background:rgba(255,255,255,.05); border-radius:12px; border:1px solid rgba(255,255,255,.1); overflow:hidden; width:100%; }
+        .mode-btn { flex:1; padding:.7rem 1rem; font-size:.9rem; font-weight:600; border:none; cursor:pointer; background:transparent; color:var(--muted); transition:all .2s; font-family:'Inter',sans-serif; }
+        .mode-btn.active { background:var(--primary); color:white; }
+        .mode-btn:hover:not(.active) { background:rgba(255,255,255,.08); }
+        .mode-hint { font-size:.75rem; color:var(--muted); text-align:center; margin-top:.25rem; }
+
         /* Nav */
         .nav-links { margin-top:1.5rem; }
         .nav-links a { color:var(--primary); text-decoration:none; font-weight:600; padding:.5rem 1rem; border-radius:8px; transition:background .2s; }
@@ -82,6 +89,11 @@
             </div>
 
             <div class="prediction-panel">
+                <div class="mode-toggle">
+                    <button class="mode-btn active" id="mode-letters" onclick="setMode('letters')">Letters (A-Z)</button>
+                    <button class="mode-btn" id="mode-phrases" onclick="setMode('phrases')">Phrases</button>
+                </div>
+                <div class="mode-hint" id="mode-hint">Holding a letter adds it to the phrase</div>
                 <div class="pred-card">
                     <div class="pred-label">Detected Sign</div>
                     <div id="prediction">--</div>
@@ -115,7 +127,7 @@
     </div>
 
     <div class="nav-links">
-        <a href="collect.html">&#8594; Data Collector</a>
+        <a href="/collect">&#8594; Data Collector</a>
     </div>
 
     <script>
@@ -147,6 +159,29 @@
         let motionActive = false;                 // true when hand motion is detected (suppresses static adds)
         let motionFrames = 0;                     // consecutive frames with motion
         const MOTION_HOLD_FRAMES = 5;             // frames of motion before suppressing static
+
+        // Mode: 'letters' = static only, 'phrases' = dynamic only
+        let translationMode = 'letters';
+
+        function setMode(mode) {
+            translationMode = mode;
+            document.getElementById('mode-letters').classList.toggle('active', mode === 'letters');
+            document.getElementById('mode-phrases').classList.toggle('active', mode === 'phrases');
+            document.getElementById('mode-hint').innerText = mode === 'letters'
+                ? 'Holding a letter adds it to the phrase'
+                : 'Perform a gesture — phrases are detected automatically';
+            // Reset state on mode switch
+            holdState = { consecutiveLetter: '', consecutiveCount: 0, addCooldown: 0 };
+            frameRing = [];
+            frameCount = 0;
+            motionActive = false;
+            motionFrames = 0;
+            predictionDiv.innerText = '--';
+            predictionDiv.style.color = 'var(--muted)';
+            confidenceBar.style.width = '0%';
+            // Show/hide motion card based on mode
+            document.querySelector('.motion-card').style.display = mode === 'phrases' ? 'flex' : 'none';
+        }
 
         // Current prediction
         let currentBest = { prediction: '--', confidence: 0 };
@@ -366,12 +401,15 @@
                 const now = Date.now();
                 if (now - lastPredictionTime > PREDICT_INTERVAL_MS) {
                     lastPredictionTime = now;
-                    // Static: single hand (21 landmarks) — only add to phrase if not in motion
-                    sendStaticPrediction(primaryHand);
 
-                    // Dynamic: two-hand frames
-                    if (frameRing.length >= MOTION_SEQ_LEN && frameCount % DYNAMIC_SEND_INTERVAL === 0) {
-                        sendDynamicPrediction([...frameRing]);
+                    if (translationMode === 'letters') {
+                        // Letters mode: static prediction only
+                        sendStaticPrediction(primaryHand);
+                    } else {
+                        // Phrases mode: dynamic prediction only
+                        if (frameRing.length >= MOTION_SEQ_LEN && frameCount % DYNAMIC_SEND_INTERVAL === 0) {
+                            sendDynamicPrediction([...frameRing]);
+                        }
                     }
                 }
             } else {
@@ -401,7 +439,11 @@
 
         hands.initialize().then(() => {
             updateStatus("Starting camera...", false);
-            camera.start().then(() => updateStatus("Waiting for hand...", false));
+            camera.start().then(() => {
+                updateStatus("Waiting for hand...", false);
+                // Initialize mode UI
+                setMode('letters');
+            });
         });
     </script>
 </body>
