@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Real-Time Recognition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5; --bg: #0F172A; --card: #1E293B; --text: #F8FAFC;
+            --muted: #94A3B8; --success: #10B981; --warning: #F59E0B; --danger: #EF4444;
+        }
+        body { font-family:'Inter',sans-serif; text-align:center; background:var(--bg); color:var(--text); margin:0; padding:2rem; display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+        h1 { font-size:2.5rem; font-weight:800; margin:0 0 .5rem; background:linear-gradient(to right,#60A5FA,#A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .subtitle { color:var(--muted); font-size:1.1rem; margin:0 0 1.5rem; }
+
+        .app { background:var(--card); padding:1.5rem; border-radius:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,.5); max-width:900px; width:100%; display:flex; flex-direction:column; align-items:center; gap:1.5rem; }
+        .top-row { display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:center; width:100%; }
+
+        /* Video */
+        .video-wrapper { position:relative; border-radius:16px; overflow:hidden; background:#000; flex-shrink:0; }
+        video { display:none; }
+        canvas { display:block; width:480px; height:360px; transform:scaleX(-1); }
+        .status-badge { position:absolute; top:1rem; right:1rem; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); padding:.4rem .8rem; border-radius:999px; font-size:.8rem; display:flex; align-items:center; gap:.4rem; border:1px solid rgba(255,255,255,.1); }
+        .status-dot { width:8px; height:8px; border-radius:50%; background:var(--warning); }
+        .status-dot.active { background:var(--success); box-shadow:0 0 8px var(--success); }
+
+        /* Prediction */
+        .prediction-panel { min-width:220px; display:flex; flex-direction:column; gap:1rem; }
+        .pred-card { background:rgba(15,23,42,.8); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:1.5rem; display:flex; flex-direction:column; align-items:center; }
+        .pred-label { font-size:.8rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:.25rem; }
+        #prediction { font-size:3rem; font-weight:800; line-height:1; color:var(--text); transition:color .3s; }
+        .conf-bar-wrap { width:100%; height:6px; background:rgba(255,255,255,.1); border-radius:3px; margin-top:.75rem; overflow:hidden; }
+        #confidence-bar { height:100%; width:0%; background:var(--success); border-radius:3px; transition:width .2s,background .3s; }
+        .hand-indicator { font-size:.75rem; color:var(--muted); margin-top:.5rem; }
+
+        /* Motion indicator */
+        .motion-card { background:rgba(15,23,42,.8); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:.75rem 1rem; display:flex; align-items:center; gap:.6rem; }
+        .motion-label { font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+        #motion-indicator { font-size:.85rem; font-weight:600; }
+        .bars { display:flex; gap:2px; align-items:flex-end; height:18px; }
+        .bars span { width:3px; background:var(--primary); border-radius:1px; animation:bar-bounce 1s ease-in-out infinite; }
+        .bars span:nth-child(1){height:6px;animation-delay:0s}.bars span:nth-child(2){height:12px;animation-delay:.15s}.bars span:nth-child(3){height:18px;animation-delay:.3s}.bars span:nth-child(4){height:12px;animation-delay:.15s}.bars span:nth-child(5){height:6px;animation-delay:0s}
+        .bars.idle span { animation:none; background:var(--muted); opacity:.3; }
+        @keyframes bar-bounce { 0%,100%{transform:scaleY(.4)} 50%{transform:scaleY(1)} }
+
+        /* Phrase */
+        .phrase-section { width:100%; }
+        .phrase-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem; }
+        .phrase-title { font-size:.9rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:600; }
+        .phrase-actions { display:flex; gap:.5rem; }
+        .phrase-actions button { padding:.4rem .8rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); color:var(--text); border-radius:8px; cursor:pointer; font-size:.8rem; font-weight:600; transition:all .2s; }
+        .phrase-actions button:hover { background:rgba(255,255,255,.1); }
+        .phrase-actions button.danger:hover { background:rgba(239,68,68,.2); border-color:var(--danger); }
+        #phrase-display { background:rgba(15,23,42,.8); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:1rem 1.5rem; min-height:2.5rem; font-size:1.5rem; font-weight:600; letter-spacing:.15em; text-align:left; display:flex; align-items:center; }
+        .cursor { display:inline-block; width:2px; height:1.5rem; background:var(--primary); animation:blink 1s step-end infinite; margin-left:2px; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+        /* Nav */
+        .nav-links { margin-top:1.5rem; }
+        .nav-links a { color:var(--primary); text-decoration:none; font-weight:600; padding:.5rem 1rem; border-radius:8px; transition:background .2s; }
+        .nav-links a:hover { background:rgba(79,70,229,.1); }
+    </style>
+</head>
+<body>
+    <h1>ASL Translator</h1>
+    <p class="subtitle">Real-time sign language recognition with phrase building</p>
+
+    <div class="app">
+        <div class="top-row">
+            <div class="video-wrapper">
+                <video id="video" width="640" height="480" autoplay playsinline></video>
+                <canvas id="output_canvas" width="640" height="480"></canvas>
+                <div class="status-badge">
+                    <div id="status-dot" class="status-dot"></div>
+                    <span id="status-text">Initializing...</span>
+                </div>
+            </div>
+
+            <div class="prediction-panel">
+                <div class="pred-card">
+                    <div class="pred-label">Detected Sign</div>
+                    <div id="prediction">--</div>
+                    <div class="conf-bar-wrap"><div id="confidence-bar"></div></div>
+                    <div class="hand-indicator" id="hand-indicator"></div>
+                </div>
+                <div class="motion-card">
+                    <div class="bars idle" id="motion-bars">
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <div>
+                        <div class="motion-label">Motion Buffer</div>
+                        <div id="motion-indicator">Idle</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phrase Builder -->
+        <div class="phrase-section">
+            <div class="phrase-header">
+                <div class="phrase-title">Phrase Builder</div>
+                <div class="phrase-actions">
+                    <button onclick="phraseAction('space')">Space</button>
+                    <button onclick="phraseAction('backspace')">&#9003; Backspace</button>
+                    <button class="danger" onclick="phraseAction('clear')">Clear</button>
+                </div>
+            </div>
+            <div id="phrase-display"><span class="cursor"></span></div>
+        </div>
+    </div>
+
+    <div class="nav-links">
+        <a href="collect.html">&#8594; Data Collector</a>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const predictionDiv = document.getElementById('prediction');
+        const confidenceBar = document.getElementById('confidence-bar');
+        const handIndicator = document.getElementById('hand-indicator');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const phraseDisplay = document.getElementById('phrase-display');
+        const motionBars = document.getElementById('motion-bars');
+        const motionIndicator = document.getElementById('motion-indicator');
+
+        // Config
+        const API_BASE = '';
+        const PREDICT_INTERVAL_MS = 200;      // throttle predictions
+        const MOTION_SEQ_LEN = 30;            // frames to buffer for dynamic model
+        const DYNAMIC_SEND_INTERVAL = 15;     // send dynamic prediction every N frames
+        const HOLD_FRAMES_TO_ADD = 8;         // consecutive same-prediction frames before adding to phrase
+        const CONFIDENCE_THRESHOLD = 0.55;    // minimum confidence to count as prediction
+
+        let lastPredictionTime = 0;
+        let phrase = '';
+        let frameRing = [];                   // rolling buffer of {left_hand, right_hand} for dynamic model
+        let frameCount = 0;
+        let dynamicPending = false;
+
+        // Current prediction
+        let currentBest = { prediction: '--', confidence: 0 };
+
+        // Hold-to-add state
+        let holdState = { consecutiveLetter: '', consecutiveCount: 0, addCooldown: 0 };
+
+        function updateStatus(msg, active) {
+            statusText.innerText = msg;
+            statusDot.classList.toggle('active', active);
+        }
+
+        function updatePhrase() {
+            phraseDisplay.innerHTML = (phrase || '') + '<span class="cursor"></span>';
+        }
+
+        async function phraseAction(action) {
+            try {
+                const response = await fetch(`${API_BASE}/phrase`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    phrase = data.phrase;
+                    updatePhrase();
+                }
+            } catch (e) { console.error('phrase action error', e); }
+        }
+
+        async function addLetterToPhrase(letter) {
+            try {
+                const response = await fetch(`${API_BASE}/phrase`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'add', letter })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    phrase = data.phrase;
+                    updatePhrase();
+                }
+            } catch (e) { console.error('add letter error', e); }
+        }
+
+        // Detect if hand is in motion (significant wrist displacement between frames)
+        function detectMotion(landmarks) {
+            if (frameRing.length < 2) return false;
+            const prevFrame = frameRing[frameRing.length - 2];
+            // Use whichever hand is available for motion detection
+            const prev = prevFrame.right_hand.length ? prevFrame.right_hand : prevFrame.left_hand;
+            if (!prev.length || !prev[0]) return false;
+            const dx = landmarks[0].x - prev[0].x;
+            const dy = landmarks[0].y - prev[0].y;
+            return Math.sqrt(dx * dx + dy * dy) > 0.008;
+        }
+
+        function updateMotionUI(active, frameCount) {
+            motionBars.classList.toggle('idle', !active);
+            if (active) {
+                motionIndicator.innerText = `Buffer: ${frameCount}/${MOTION_SEQ_LEN}`;
+                motionIndicator.style.color = 'var(--warning)';
+            } else {
+                motionIndicator.innerText = 'Idle';
+                motionIndicator.style.color = 'var(--muted)';
+            }
+        }
+
+        // Convert MediaPipe landmark objects to plain {x, y, z} for JSON serialization
+        function toLandmarkArray(landmarks) {
+            return Array.from(landmarks).map(lm => ({ x: lm.x, y: lm.y, z: lm.z }));
+        }
+
+        async function sendStaticPrediction(landmarks) {
+            try {
+                const response = await fetch(`${API_BASE}/predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ landmarks: landmarks })
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                currentBest = { prediction: data.prediction, confidence: data.confidence };
+                showPrediction(data.prediction, data.confidence);
+                handleHoldToAdd(data.prediction, data.confidence);
+            } catch (e) { console.error('predict error', e); }
+        }
+
+        let lastDynamicAdd = 0;
+
+        async function sendDynamicPrediction(frames) {
+            if (dynamicPending) return; // don't stack requests
+            dynamicPending = true;
+            try {
+                const response = await fetch(`${API_BASE}/predict_dynamic`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sequence: frames })
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                if (data.confidence > CONFIDENCE_THRESHOLD) {
+                    showPrediction(data.prediction, data.confidence);
+
+                    // Add to phrase immediately (with 3s cooldown to prevent spam)
+                    const now = Date.now();
+                    if (now - lastDynamicAdd > 3000) {
+                        lastDynamicAdd = now;
+                        addLetterToPhrase(data.prediction);
+                        // Flash effect
+                        predictionDiv.style.textShadow = '0 0 20px var(--success)';
+                        setTimeout(() => { predictionDiv.style.textShadow = ''; }, 300);
+                    }
+
+                    motionIndicator.innerText = `Detected: ${data.prediction}`;
+                    motionIndicator.style.color = 'var(--success)';
+                }
+            } catch (e) { console.error('dynamic predict error', e); }
+            finally { dynamicPending = false; }
+        }
+
+        function showPrediction(letter, confidence) {
+            const pct = confidence * 100;
+            predictionDiv.innerText = letter;
+            confidenceBar.style.width = `${pct}%`;
+            if (confidence > 0.8) {
+                predictionDiv.style.color = 'var(--success)';
+                confidenceBar.style.background = 'var(--success)';
+            } else if (confidence > 0.5) {
+                predictionDiv.style.color = 'var(--warning)';
+                confidenceBar.style.background = 'var(--warning)';
+            } else {
+                predictionDiv.style.color = 'var(--text)';
+                confidenceBar.style.background = 'var(--muted)';
+            }
+        }
+
+        function handleHoldToAdd(letter, confidence) {
+            if (confidence < CONFIDENCE_THRESHOLD) {
+                holdState.consecutiveCount = 0;
+                holdState.consecutiveLetter = '';
+                return;
+            }
+            if (holdState.addCooldown > 0) { holdState.addCooldown--; return; }
+
+            if (letter === holdState.consecutiveLetter) {
+                holdState.consecutiveCount++;
+            } else {
+                holdState.consecutiveLetter = letter;
+                holdState.consecutiveCount = 1;
+            }
+
+            if (holdState.consecutiveCount >= HOLD_FRAMES_TO_ADD) {
+                addLetterToPhrase(letter);
+                holdState.consecutiveCount = 0;
+                holdState.addCooldown = 10;
+                predictionDiv.style.textShadow = '0 0 20px var(--success)';
+                setTimeout(() => predictionDiv.style.textShadow = '', 300);
+            }
+        }
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            const numHands = results.multiHandLandmarks ? results.multiHandLandmarks.length : 0;
+
+            if (numHands > 0) {
+                updateStatus(`Tracking ${numHands} Hand${numHands > 1 ? 's' : ''}`, true);
+
+                // Draw all detected hands
+                const handColors = ['#4F46E5', '#E5464F'];
+                let leftHand = [], rightHand = [];
+                for (let i = 0; i < numHands; i++) {
+                    const landmarks = results.multiHandLandmarks[i];
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color:'rgba(255,255,255,0.5)', lineWidth:4});
+                    drawLandmarks(canvasCtx, landmarks, {color: handColors[i], lineWidth:2, radius:4});
+
+                    const label = (results.multiHandedness && results.multiHandedness[i])
+                        ? results.multiHandedness[i].label : (i === 0 ? 'Right' : 'Left');
+                    if (label === 'Left') leftHand = toLandmarkArray(landmarks);
+                    else rightHand = toLandmarkArray(landmarks);
+                }
+
+                // Static prediction uses first detected hand only (single hand for letters)
+                const primaryHand = toLandmarkArray(results.multiHandLandmarks[0]);
+                handIndicator.innerText = numHands > 1 ? '2 hands' : '';
+
+                // Buffer both hands per frame for dynamic model
+                frameRing.push({ left_hand: leftHand, right_hand: rightHand });
+                if (frameRing.length > MOTION_SEQ_LEN) frameRing.shift();
+                frameCount++;
+                updateMotionUI(frameRing.length >= MOTION_SEQ_LEN, frameRing.length);
+
+                const now = Date.now();
+                if (now - lastPredictionTime > PREDICT_INTERVAL_MS) {
+                    lastPredictionTime = now;
+                    // Static: single hand (21 landmarks)
+                    sendStaticPrediction(primaryHand);
+
+                    // Dynamic: two-hand frames
+                    if (frameRing.length >= MOTION_SEQ_LEN && frameCount % DYNAMIC_SEND_INTERVAL === 0) {
+                        sendDynamicPrediction([...frameRing]);
+                    }
+                }
+            } else {
+                updateStatus('Waiting for hand...', false);
+                predictionDiv.innerText = '--';
+                predictionDiv.style.color = 'var(--muted)';
+                confidenceBar.style.width = '0%';
+                handIndicator.innerText = '';
+                frameRing = [];
+                frameCount = 0;
+                holdState = { consecutiveLetter: '', consecutiveCount: 0, addCooldown: 0 };
+                currentBest = { prediction: '--', confidence: 0 };
+                updateMotionUI(false, 0);
+            }
+            canvasCtx.restore();
+        }
+
+        updateStatus("Loading AI models...", false);
+        const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+        hands.setOptions({ maxNumHands:2, modelComplexity:1, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => { await hands.send({image: videoElement}); },
+            width: 640, height: 480
+        });
+
+        hands.initialize().then(() => {
+            updateStatus("Starting camera...", false);
+            camera.start().then(() => updateStatus("Waiting for hand...", false));
+        });
+    </script>
+</body>
+</html>

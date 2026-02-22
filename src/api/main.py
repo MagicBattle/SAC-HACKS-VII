@@ -1,13 +1,14 @@
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, abort, render_template
 from flask_cors import CORS
 from collections import deque
 import torch
 import numpy as np
 import os
 from src.models.sign_model import ASLClassifier, ASLDynamicClassifier
-from src.data.preprocess import normalize_landmarks
+from src.data.preprocess import normalize_landmarks, normalize_both_hands
 
-app = Flask("ASL Recognition API")
+app = Flask("ASL Recognition API",
+            template_folder=os.path.join(os.path.dirname(__file__), "..", "..", "templates"))
 app.config["DESCRIPTION"] = "Real-time ASL Alphabet Classification with Motion + Phrases"
 CORS(app)
 
@@ -19,7 +20,7 @@ if os.path.exists(static_model_path):
 static_model.eval()
 
 # --- Dynamic model (J, Z, Hello, Goodbye, Please, Thank You) ---
-DYNAMIC_CLASSES = ['J', 'Z', 'Hello', 'Goodbye', 'Please', 'Thank You']
+DYNAMIC_CLASSES = ['J', 'Z', 'Hello', 'Goodbye', 'Please', 'Thank You', 'My name is', 'I love you']
 SEQ_LEN = 30
 dynamic_model = None
 dynamic_model_path = "models/best_dynamic_model.pth"
@@ -37,11 +38,46 @@ phrase_letters = []
 
 
 def _normalize_payload(landmarks):
-    lm_list = [{"x": lm["x"], "y": lm["y"], "z": lm["z"]} for lm in landmarks]
+    """Convert landmarks from various formats and normalize to 63D."""
+    lm_list = []
+    for lm in landmarks:
+        if isinstance(lm, dict):
+            lm_list.append({"x": float(lm["x"]), "y": float(lm["y"]), "z": float(lm["z"])})
+        elif isinstance(lm, (list, tuple)):
+            lm_list.append({"x": float(lm[0]), "y": float(lm[1]), "z": float(lm[2])})
+        else:
+            lm_list.append({"x": float(lm.x), "y": float(lm.y), "z": float(lm.z)})
     return normalize_landmarks(lm_list)
 
 
+def _parse_landmarks(landmarks):
+    """Convert landmarks from various input formats to list of dicts."""
+    if not landmarks:
+        return []
+    lm_list = []
+    for lm in landmarks:
+        if isinstance(lm, dict):
+            lm_list.append({"x": float(lm["x"]), "y": float(lm["y"]), "z": float(lm["z"])})
+        elif isinstance(lm, (list, tuple)):
+            lm_list.append({"x": float(lm[0]), "y": float(lm[1]), "z": float(lm[2])})
+        else:
+            lm_list.append({"x": float(lm.x), "y": float(lm.y), "z": float(lm.z)})
+    return lm_list
+
+
 @app.route("/", methods=["GET"])
+def index():
+    """Serve the main ASL Translator frontend."""
+    return render_template("index.html")
+
+
+@app.route("/collect", methods=["GET"])
+def collect():
+    """Serve the data collection page."""
+    return render_template("collect.html")
+
+
+@app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({
         "status": "healthy",
@@ -75,30 +111,32 @@ def predict():
 
 @app.route("/predict_dynamic", methods=["POST"])
 def predict_dynamic():
-    """Predict a dynamic/motion sign (J or Z) from a sequence of frames."""
+    """Predict a dynamic/motion sign from a sequence of two-hand frames (126D per frame)."""
     if dynamic_model is None:
         abort(503, description="Dynamic model not loaded. Train it first.")
 
     data = request.get_json()
     sequence = data.get("sequence", [])
 
-    # Normalize each frame in the sequence
+    # Each frame has {left_hand: [...], right_hand: [...]}
     seq = []
     for frame in sequence:
-        if len(frame) != 21:
-            abort(400, description="Each frame must have 21 landmarks")
-        features = _normalize_payload(frame)
+        left = _parse_landmarks(frame.get("left_hand", []))
+        right = _parse_landmarks(frame.get("right_hand", []))
+        if not left and not right:
+            abort(400, description="Each frame must have at least one hand")
+        features = normalize_both_hands(left, right)
         seq.append(features)
 
     # Pad or truncate to SEQ_LEN
     seq = np.array(seq, dtype=np.float32)
     if len(seq) < SEQ_LEN:
-        pad = np.zeros((SEQ_LEN - len(seq), 63), dtype=np.float32)
+        pad = np.zeros((SEQ_LEN - len(seq), 126), dtype=np.float32)
         seq = np.concatenate([seq, pad], axis=0)
     elif len(seq) > SEQ_LEN:
         seq = seq[:SEQ_LEN]
 
-    tensor = torch.FloatTensor(seq).unsqueeze(0)  # (1, seq_len, 63)
+    tensor = torch.FloatTensor(seq).unsqueeze(0)  # (1, seq_len, 126)
 
     with torch.no_grad():
         outputs = dynamic_model(tensor)
@@ -136,3 +174,7 @@ def phrase():
         abort(400, description="Invalid action")
 
     return jsonify({"phrase": "".join(phrase_letters)})
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)

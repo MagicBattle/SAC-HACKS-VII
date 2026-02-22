@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Data Collector</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #4F46E5; --bg: #0F172A; --card: #1E293B; --text: #F8FAFC; --muted: #94A3B8; --success: #10B981; --warning: #F59E0B; --danger: #EF4444; }
+        body { font-family: 'Inter', sans-serif; text-align: center; background: var(--bg); color: var(--text); margin: 0; padding: 2rem; display: flex; flex-direction: column; align-items: center; }
+        h1 { font-size: 2.5rem; font-weight: 800; margin: 0 0 0.5rem; background: linear-gradient(to right, #60A5FA, #A78BFA); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: var(--muted); margin-bottom: 1.5rem; }
+        .app { background: var(--card); padding: 1.5rem; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); max-width: 900px; width: 100%; }
+        .layout { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
+        .video-wrapper { position: relative; border-radius: 16px; overflow: hidden; background: #000; flex-shrink: 0; }
+        video { display: none; }
+        canvas { display: block; width: 480px; height: 360px; transform: scaleX(-1); }
+        .status-badge { position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem; border: 1px solid rgba(255,255,255,0.1); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); }
+        .status-dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-dot.recording { background: var(--danger); box-shadow: 0 0 8px var(--danger); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .controls { flex: 1; min-width: 280px; text-align: left; }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .tab { padding: 0.6rem 1.2rem; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--muted); transition: all 0.2s; }
+        .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .section { display: none; }
+        .section.active { display: block; }
+        label { font-weight: 600; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.5rem; }
+        select { width: 100%; padding: 0.8rem; font-size: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: #1E293B; color: white; margin-bottom: 1rem; appearance: auto; }
+        option { background: #1E293B; color: white; }
+        button { padding: 0.8rem 1.5rem; font-size: 1rem; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; width: 100%; margin-bottom: 0.5rem; }
+        .btn-record { background: var(--success); color: white; }
+        .btn-record:hover { background: #059669; }
+        .btn-record-motion { background: var(--danger); color: white; }
+        .btn-record-motion.recording { animation: pulse 1s infinite; }
+        .btn-download { background: var(--primary); color: white; }
+        .btn-download:hover { background: #4338CA; }
+        .count-badge { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1rem; text-align: center; margin-top: 0.5rem; }
+        .count-badge .number { font-size: 2rem; font-weight: 800; }
+        .count-badge .label { font-size: 0.8rem; color: var(--muted); }
+        .nav-links { margin-top: 1.5rem; }
+        .nav-links a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        .instructions { font-size: 0.85rem; color: var(--muted); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 0.8rem; margin-bottom: 1rem; text-align: left; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <h1>ASL Data Collector</h1>
+    <p class="subtitle">Collect training data for static and motion signs</p>
+
+    <div class="app">
+        <div class="layout">
+            <div class="video-wrapper">
+                <video id="video" width="640" height="480" autoplay playsinline></video>
+                <canvas id="output_canvas" width="640" height="480"></canvas>
+                <div class="status-badge">
+                    <div id="status-dot" class="status-dot"></div>
+                    <span id="status-text">Loading...</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="tabs">
+                    <div class="tab active" data-tab="static" onclick="switchTab('static')">Static (A-Z)</div>
+                    <div class="tab" data-tab="dynamic" onclick="switchTab('dynamic')">Motion / Phrases</div>
+                </div>
+
+                <!-- Static Sign Collection -->
+                <div id="section-static" class="section active">
+                    <div class="instructions">
+                        Select a letter, make the sign with your hand, and press <b>Spacebar</b> or click Record. Capture 15-30 samples per letter from slightly different angles.
+                    </div>
+                    <label>Letter</label>
+                    <select id="letter">
+                        <option value="0">A</option><option value="1">B</option><option value="2">C</option>
+                        <option value="3">D</option><option value="4">E</option><option value="5">F</option>
+                        <option value="6">G</option><option value="7">H</option><option value="8">I</option>
+                        <option value="10">K</option><option value="11">L</option>
+                        <option value="12">M</option><option value="13">N</option><option value="14">O</option>
+                        <option value="15">P</option><option value="16">Q</option><option value="17">R</option>
+                        <option value="18">S</option><option value="19">T</option><option value="20">U</option>
+                        <option value="21">V</option><option value="22">W</option><option value="23">X</option>
+                        <option value="24">Y</option>
+                    </select>
+                    <button class="btn-record" id="staticRecordBtn">Record Frame (Spacebar)</button>
+                    <button class="btn-download" onclick="downloadStatic()">Download Static Dataset</button>
+                    <div class="count-badge">
+                        <div class="number" id="static-count">0</div>
+                        <div class="label">Static samples</div>
+                    </div>
+                </div>
+
+                <!-- Dynamic/Motion Sign Collection -->
+                <div id="section-dynamic" class="section">
+                    <div class="instructions">
+                        Select a sign. Click <b>Start Recording</b>, perform the gesture, then click <b>Stop</b>. Records ~30 frames of hand movement. Capture 15-30 samples per sign from different angles.
+                    </div>
+                    <label>Motion Sign</label>
+                    <select id="dynamic-letter">
+                        <option value="0">J</option>
+                        <option value="1">Z</option>
+                        <option value="2">Hello</option>
+                        <option value="3">Goodbye</option>
+                        <option value="4">Please</option>
+                        <option value="5">Thank You</option>
+                        <option value="6">My name is</option>
+                        <option value="7">I love you</option>
+                    </select>
+                    <button class="btn-record-motion" id="dynamicRecordBtn" onclick="toggleMotionRecording()">Start Recording Motion</button>
+                    <button class="btn-download" onclick="downloadDynamic()">Download Dynamic Dataset</button>
+                    <div class="count-badge">
+                        <div class="number" id="dynamic-count">0</div>
+                        <div class="label">Motion samples</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-links">
+        <a href="index.html">← Back to ASL Translator</a>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        let staticDataset = [];
+        let dynamicDataset = [];
+        let currentLandmarks = null;
+        let isRecordingMotion = false;
+        let motionBuffer = [];
+        let currentTab = 'static';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`section-${tab}`).classList.add('active');
+        }
+
+        function updateStatus(msg, state) {
+            statusText.innerText = msg;
+            statusDot.className = 'status-dot';
+            if (state === 'active') statusDot.classList.add('active');
+            if (state === 'recording') statusDot.classList.add('recording');
+        }
+
+        // Convert MediaPipe landmark objects to plain {x, y, z} for JSON serialization
+        function toLandmarkArray(landmarks) {
+            return Array.from(landmarks).map(lm => ({ x: lm.x, y: lm.y, z: lm.z }));
+        }
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            const numHands = results.multiHandLandmarks ? results.multiHandLandmarks.length : 0;
+
+            if (numHands > 0) {
+                const handColors = ['#4F46E5', '#E5464F'];
+                for (let i = 0; i < numHands; i++) {
+                    drawConnectors(canvasCtx, results.multiHandLandmarks[i], HAND_CONNECTIONS, {color: 'rgba(255,255,255,0.5)', lineWidth: 4});
+                    drawLandmarks(canvasCtx, results.multiHandLandmarks[i], {color: handColors[i], lineWidth: 2, radius: 4});
+                }
+
+                // First detected hand for static recording
+                currentLandmarks = toLandmarkArray(results.multiHandLandmarks[0]);
+
+                if (!isRecordingMotion) updateStatus(`Tracking ${numHands} hand${numHands > 1 ? 's' : ''}`, 'active');
+
+                // If recording motion, push both hands per frame
+                if (isRecordingMotion) {
+                    let leftHand = [], rightHand = [];
+                    for (let i = 0; i < numHands; i++) {
+                        const label = (results.multiHandedness && results.multiHandedness[i])
+                            ? results.multiHandedness[i].label : (i === 0 ? 'Right' : 'Left');
+                        if (label === 'Left') leftHand = toLandmarkArray(results.multiHandLandmarks[i]);
+                        else rightHand = toLandmarkArray(results.multiHandLandmarks[i]);
+                    }
+                    motionBuffer.push({ left_hand: leftHand, right_hand: rightHand });
+                    updateStatus(`Recording... ${motionBuffer.length} frames`, 'recording');
+                }
+            } else {
+                currentLandmarks = null;
+                if (!isRecordingMotion) updateStatus('Waiting for hand...', '');
+            }
+            canvasCtx.restore();
+        }
+
+        // Static recording
+        function recordStaticSample() {
+            if (currentTab !== 'static') return;
+            if (currentLandmarks) {
+                const label = parseInt(document.getElementById('letter').value);
+                staticDataset.push({ label: label, landmarks: currentLandmarks });
+                document.getElementById('static-count').innerText = staticDataset.length;
+                canvasElement.style.boxShadow = '0 0 20px var(--success)';
+                setTimeout(() => canvasElement.style.boxShadow = '', 150);
+            }
+        }
+
+        document.getElementById('staticRecordBtn').addEventListener('click', recordStaticSample);
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (currentTab === 'static') recordStaticSample();
+            }
+        });
+
+        // Motion recording
+        function toggleMotionRecording() {
+            const btn = document.getElementById('dynamicRecordBtn');
+            if (!isRecordingMotion) {
+                isRecordingMotion = true;
+                motionBuffer = [];
+                btn.innerText = "Stop Recording";
+                btn.classList.add('recording');
+                updateStatus("Recording...", "recording");
+            } else {
+                isRecordingMotion = false;
+                btn.innerText = "Start Recording Motion";
+                btn.classList.remove('recording');
+                updateStatus("Hand tracked", "active");
+
+                if (motionBuffer.length >= 5) {
+                    const label = parseInt(document.getElementById('dynamic-letter').value);
+                    dynamicDataset.push({ label: label, sequence: motionBuffer });
+                    document.getElementById('dynamic-count').innerText = dynamicDataset.length;
+                    canvasElement.style.boxShadow = '0 0 20px var(--success)';
+                    setTimeout(() => canvasElement.style.boxShadow = '', 150);
+                } else {
+                    updateStatus("Too short! Try again.", "");
+                }
+            }
+        }
+
+        function downloadStatic() {
+            if (staticDataset.length === 0) { alert("No static data!"); return; }
+            downloadJSON(staticDataset, "asl_dataset.json");
+        }
+
+        function downloadDynamic() {
+            if (dynamicDataset.length === 0) { alert("No dynamic data!"); return; }
+            downloadJSON(dynamicDataset, "asl_dynamic_dataset.json");
+        }
+
+        function downloadJSON(data, filename) {
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        updateStatus("Loading AI models...", "");
+        const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+        hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => { await hands.send({image: videoElement}); },
+            width: 640, height: 480
+        });
+
+        hands.initialize().then(() => {
+            updateStatus("Starting camera...", "");
+            camera.start().then(() => updateStatus("Waiting for hand...", ""));
+        });
+    </script>
+</body>
+</html>

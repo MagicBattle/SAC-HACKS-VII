@@ -30,10 +30,10 @@ class ASLClassifier(nn.Module):
 
 class ASLDynamicClassifier(nn.Module):
     """
-    LSTM-based classifier for dynamic/motion ASL signs (J, Z, and future phrases).
-    Processes a sequence of landmark frames and classifies the motion pattern.
+    LSTM-based classifier for dynamic/motion ASL signs (J, Z, and phrases).
+    Processes a sequence of two-hand landmark frames (126D per frame).
     """
-    def __init__(self, input_size=63, hidden_size=128, num_layers=2, num_classes=2):
+    def __init__(self, input_size=126, hidden_size=128, num_layers=2, num_classes=2):
         super().__init__()
         
         self.lstm = nn.LSTM(
@@ -52,7 +52,7 @@ class ASLDynamicClassifier(nn.Module):
         )
 
     def forward(self, x):
-        # x shape: (batch_size, seq_len, 63)
+        # x shape: (batch_size, seq_len, input_size)
         lstm_out, (hn, cn) = self.lstm(x)
         # Use the last hidden state from the top layer
         features = hn[-1]  # shape: (batch_size, hidden_size)

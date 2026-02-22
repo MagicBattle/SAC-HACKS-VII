@@ -98,8 +98,8 @@ def train_dynamic(epochs=100, batch_size=16, lr=0.001, save_dir="models", seq_le
     print("\n=== Training Dynamic Sign Model (LSTM) ===")
     full_dataset = ASLDynamicDataset(data_path=data_path, labels_path=labels_path, seq_len=seq_len)
     unique_labels = np.unique(full_dataset.labels)
-    # Always use 6 classes to match API: J, Z, Hello, Goodbye, Please, Thank You
-    DYNAMIC_NUM_CLASSES = 6
+    # Always use 8 classes to match API: J, Z, Hello, Goodbye, Please, Thank You, My name is, I love you
+    DYNAMIC_NUM_CLASSES = 8
     num_classes = max(DYNAMIC_NUM_CLASSES, int(unique_labels.max()) + 1)
     print(f"Found {len(full_dataset)} sequences across {len(unique_labels)} classes (model uses {num_classes} output classes)")
     

@@ -1,13 +1,22 @@
 import json
 import numpy as np
 import os
-from src.data.preprocess import normalize_landmarks
+from src.data.preprocess import normalize_landmarks, normalize_both_hands
 
 
 def _convert_landmarks(landmarks):
-    """Convert a list of landmark dicts to normalized feature vector."""
+    """Convert a list of landmark dicts to normalized 63D feature vector."""
     lm_list = [{"x": lm['x'], "y": lm['y'], "z": lm['z']} for lm in landmarks]
     return normalize_landmarks(lm_list)
+
+
+def _convert_two_hand_frame(frame):
+    """Convert a two-hand frame dict to normalized 126D feature vector."""
+    left = frame.get('left_hand', [])
+    right = frame.get('right_hand', [])
+    left_lm = [{"x": lm['x'], "y": lm['y'], "z": lm['z']} for lm in left] if left else []
+    right_lm = [{"x": lm['x'], "y": lm['y'], "z": lm['z']} for lm in right] if right else []
+    return normalize_both_hands(left_lm, right_lm)
 
 
 def prepare_static_dataset(json_path="frontend/asl_dataset.json", output_dir="data"):
@@ -39,8 +48,8 @@ def prepare_dynamic_dataset(json_path="frontend/asl_dynamic_dataset.json",
                             output_dir="data", seq_len=30):
     """Convert motion sign JSON data to numpy arrays.
 
-    Each sample is a sequence of landmark frames, padded or truncated to seq_len.
-    Output shape: X_dynamic (N, seq_len, 63), y_dynamic (N,)
+    Each sample is a sequence of two-hand frames, padded or truncated to seq_len.
+    Output shape: X_dynamic (N, seq_len, 126), y_dynamic (N,)
     """
     if not os.path.exists(json_path):
         print(f"No dynamic dataset found at {json_path} — skipping.")
@@ -55,22 +64,27 @@ def prepare_dynamic_dataset(json_path="frontend/asl_dynamic_dataset.json",
     for sample in dataset:
         sequence = sample['sequence']
         frames = []
-        for frame_landmarks in sequence:
-            features = _convert_landmarks(frame_landmarks)
+        for frame in sequence:
+            # Support both old format (list of landmarks) and new format ({left_hand, right_hand})
+            if isinstance(frame, dict) and ('left_hand' in frame or 'right_hand' in frame):
+                features = _convert_two_hand_frame(frame)
+            else:
+                # Legacy single-hand: put into right hand, zero-pad left
+                features = _convert_two_hand_frame({'right_hand': frame})
             frames.append(features)
 
         # Pad or truncate to seq_len
-        frames_arr = np.array(frames, dtype=np.float32)  # (T, 63)
+        frames_arr = np.array(frames, dtype=np.float32)  # (T, 126)
         if len(frames_arr) >= seq_len:
             frames_arr = frames_arr[:seq_len]
         else:
-            pad = np.zeros((seq_len - len(frames_arr), 63), dtype=np.float32)
+            pad = np.zeros((seq_len - len(frames_arr), 126), dtype=np.float32)
             frames_arr = np.concatenate([frames_arr, pad], axis=0)
 
         X.append(frames_arr)
         y.append(sample['label'])
 
-    X = np.array(X, dtype=np.float32)  # (N, seq_len, 63)
+    X = np.array(X, dtype=np.float32)  # (N, seq_len, 126)
     y = np.array(y, dtype=np.int64)
 
     np.save(os.path.join(output_dir, "X_dynamic.npy"), X)
