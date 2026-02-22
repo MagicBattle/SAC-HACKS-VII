@@ -4,6 +4,8 @@ import path from 'path'
 export default defineConfig({
   // Root is the project root (one level up) where index.html now lives
   root: path.resolve(__dirname, '..'),
+  // Base path for GitHub Pages (repo name)
+  base: '/SAC-HACKS-VII/',
   // Public assets stay in sacHacks/public
   publicDir: path.resolve(__dirname, 'public'),
   // Build output goes to sacHacks/dist
