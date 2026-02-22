@@ -1,4 +1,4 @@
-import './css/style.css'
+// No import needed for static HTML/JS/CSS
 
 // Interval ID for the prediction polling loop
 let pollInterval = null;
@@ -13,7 +13,8 @@ function openDemo() {
   // Set the video src — the browser will connect to the MJPEG stream.
   // Adding a timestamp prevents the browser from using a cached URL.
   const img = document.getElementById("videoFeed");
-  img.src   = "/video_feed?" + Date.now();
+  // No import needed for static HTML/JS/CSS
+  // Interval ID for the prediction polling loop
 
   // Poll the /prediction endpoint every 200ms to update the UI
   pollInterval = setInterval(fetchPrediction, 200);
@@ -128,8 +129,235 @@ document.querySelector('#app').innerHTML = `
     <li><a href="#demo" class="nav-cta">Try it live</a></li>
   </ul>
 </nav>
+  document.querySelector('#app').innerHTML = `
+    <!-- ── Navigation ─────────────────────────────────────────────────────────── -->
+    <nav> 
+      <div class="nav-logo">Sign<span>Flow</span></div>
+      <ul class="nav-links">
+        <li><a href="#welcome">Welcome</a></li>
+        <li><a href="#why">Why ASL</a></li>
+        <li><a href="#history">History</a></li>
+        <li><a href="#alphabet">Alphabet</a></li>
+        <li><a href="#tips">Tips</a></li>
+        <li><a href="#demo" class="nav-cta">Try it live</a></li>
+      </ul>
+    </nav>
 
-<!-- ── Hero CHANGE LATER──────────────────────────────────────────────────────────────── -->
+    <!-- ── Hero Section ───────────────────────────────────────────────────────── -->
+    <section class="hero" id="welcome">
+      <div class="hero-text">
+        <span class="hero-tag">AI-powered ASL recognition</span>
+        <h1>Hands that <em>speak</em>,<br>words that connect.</h1>
+        <p>SignFlow uses computer vision to translate American Sign Language into text. Live translation in your browser. Explore the rich history and beauty of ASL, then try the translator yourself.</p>
+        <div class="hero-btns">
+          <a href="/translator" class="btn-primary">Try the translator ↓</a>
+          <a href="#history" class="btn-secondary">ASL History ↓</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img src="welcome.png" alt="Illustration of ASL" class="welcomeimg">
+      </div>
+    </section>
+
+    <section class="hero" id="why">
+      <div class="hero-text">
+        <span class="section-tag">Why</span>
+        <h2 class="section-title">Why ASL?</h2>
+        <p class="section-sub">Many deaf people rely on translators for communication with others. For example, hospitals provide translators free of charge to assist in translating your symptoms to the doctor and relaying back what the doctor says. These translators make the situation of conversing with others manageable.</p>
+        <p>However, translators cannot be by your side 24/7, and their lack of presence in everyday life can be felt. For example, it might be difficult for someone with hearing loss to ask where an item is located in the grocery store. That's why an ASL translator website/app would be an incredibly useful tool to deaf people, because their phone would act as their personal translator. This would allow deaf people to have more fluid conversations with others, reducing the problem of language barriers between hearing and non-hearing individuals.</p>
+      </div>
+      <div class="hero-visual">
+        <img src="why.png" alt="Illustration of ASL communication" class="whyimg">
+      </div>
+    </section>
+
+    <section id="history">
+      <span class="section-tag">Background</span>
+      <h2 class="section-title">A language with deep roots</h2>
+      <p class="section-sub">American Sign Language is a complete, natural language with its own grammar, syntax, and culture. It's not simply a signed version of English.</p>
+      <div class="history-grid">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-year">1817</div>
+            <div class="timeline-content">
+              <div class="timeline-dot"></div>
+              <h4>America's First School for the Deaf</h4>
+              <p>Thomas Hopkins Gallaudet and Laurent Clerc founded the American School for the Deaf in Hartford. Connecticut is the birthplace of ASL.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">1864</div>
+            <div class="timeline-content">
+              <div class="timeline-dot"></div>
+              <h4>Gallaudet University Founded</h4>
+              <p>In 1864, Gallaudet University was established in Washington, D.C., becoming the world’s only university specifically designed for deaf and hard-of-hearing students.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">1960</div>
+            <div class="timeline-content">
+              <div class="timeline-dot"></div>
+              <h4>ASL Recognized as a Language</h4>
+              <p>Linguist William Stokoe published research proving ASL is a fully structured linguistic system and not simply gestures or mime.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">1990</div>
+            <div class="timeline-content">
+              <div class="timeline-dot"></div>
+              <h4>Americans with Disabilities Act</h4>
+              <p>The ADA mandated accessibility protections and helped legitimize ASL interpreting as a professional field across the United States.</p>
+            </div>
+          </div>
+        </div>
+        <div class="history-stats">
+          <div class="stat-card">
+            <div class="stat-number">500K+</div>
+            <div class="stat-label">Native ASL signers in the US and Canada</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">3rd</div>
+            <div class="stat-label">Often cited as the 3rd most used language in the U.S</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">200+</div>
+            <div class="stat-label">Years of history since ASL's formal founding</div>
+          </div>
+          <div class="stat-card accent">
+            <div class="stat-number">~15%</div>
+            <div class="stat-label">Of the world's population lives with some degree of hearing loss. That's over 1 billion people globally</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="alphabet">
+      <span class="section-tag">The Alphabet</span>
+      <h2 class="section-title">26 letters, infinite expression</h2>
+      <p class="section-sub">The ASL manual alphabet represents each letter with a distinct handshape. J and Z use motion compared to the rest.</p>
+      <div class="alphabet-grid">
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">A</div><div class="desc">Fist, thumb to side</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">B</div><div class="desc">Flat hand, fingers up</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">C</div><div class="desc">Curved C shape</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">D</div><div class="desc">Index up, others curl</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">E</div><div class="desc">Fingers bent to palm</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">F</div><div class="desc">Index & thumb touch</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">G</div><div class="desc">Index & thumb point</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">H</div><div class="desc">Two fingers sideways</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">J</div><div class="desc">Pinky draws a J in the air</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">I</div><div class="desc">Pinky up</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">K</div><div class="desc">Index, middle + thumb</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">L</div><div class="desc">L-shape index & thumb</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">M</div><div class="desc">3 fingers over thumb</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">N</div><div class="desc">2 fingers over thumb</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">O</div><div class="desc">All fingers form O</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">P</div><div class="desc">K-shape pointing down</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">Q</div><div class="desc">G-shape pointing down</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">R</div><div class="desc">Crossed index & middle</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">S</div><div class="desc">Fist, thumb in front</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">T</div><div class="desc">Thumb between fingers</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">U</div><div class="desc">Index & middle together</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">V</div><div class="desc">Index & middle apart</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">W</div><div class="desc">3 fingers spread up</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">X</div><div class="desc">Index finger hooked</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">Y</div><div class="desc">Pinky & thumb out</div></div>
+        <div class="alpha-card"><span class="hand"></span><div class="ltr">Z</div><div class="desc">Index finger draws a Z</div></div>
+      </div>
+    </section>
+
+    <section id="tips">
+      <span class="section-tag">Learning Guide</span>
+      <h2 class="section-title">Tips for learning ASL</h2>
+      <p class="section-sub">Whether you're a beginner or brushing up your skills, these principles will help you progress faster and more confidently.</p>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <div class="tip-num">01</div>
+          <h3>Start with fingerspelling</h3>
+          <p>Learning the manual alphabet gives you the foundation to spell any word. Practice each letter in a mirror until your hands form them naturally without thinking.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-num">02</div>
+          <h3>Immerse yourself in Deaf culture</h3>
+          <p>ASL is deeply tied to culture. Watch ASL videos, attend Deaf events, and connect with the Deaf community. Learning the language accelerates through real interaction with others.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-num">03</div>
+          <h3>Focus on clarity, not speed</h3>
+          <p>Beginners often rush. Slow down and ensure each handshape is clean and distinct. Speed comes naturally with time and bad habits formed early are hard to unlearn.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-num">04</div>
+          <h3>Use your whole body</h3>
+          <p>ASL uses facial expressions, mouth movements, and body posture as grammatical elements. Signing with only your hands is like speaking in a monotone.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-num">05</div>
+          <h3>Practice every single day</h3>
+          <p>Even 10 minutes of daily practice beats a 2-hour weekly session. Muscle memory is built through repetition, so short consistent sessions cement signs far more effectively.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-num">06</div>
+          <h3>Be patient and embrace mistakes</h3>
+          <p>Every fluent signer made thousands of errors on the way there. The Deaf community is famously welcoming to learners, so don't let fear of mistakes stop you from trying.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo">
+      <span class="section-tag">Live Demo</span>
+      <h2 class="section-title">Try it yourself</h2>
+      <p class="section-sub">Point your webcam at your hand and sign a letter. Our AI will recognize it in real time and build your message letter by letter. It will only work with certain phrases that we've trained the model on, but should work for each letter.</p>
+      <a href="/translator" class="try-btn">✋ Open the translator</a>
+    </section>
+
+    <footer>
+      <strong>SignBridge</strong> — Built with MediaPipe, PyTorch & Flask.<br>
+      <span style="margin-top:6px;display:block;">ASL is a language. Learn it. Respect it. Celebrate it.</span>
+    </footer>
+
+    <div class="modal-overlay" id="modal" onclick="handleOverlayClick(event)">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">ASL Live Translator</div>
+          <button class="modal-close" onclick="closeDemo()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="video-wrap">
+            <img id="videoFeed" src="" alt="Webcam feed" />
+            <div class="video-overlay">🔴 Live</div>
+          </div>
+          <div class="demo-panel">
+            <div class="pred-display">
+              <div class="pred-label">Detecting</div>
+              <div class="pred-letter" id="predLetter">—</div>
+              <div class="pred-conf"   id="predConf">waiting for hand...</div>
+              <div class="stability-wrap">
+                <div class="stability-label">
+                  <span>Hold steady to commit</span>
+                  <span id="stableNum">0%</span>
+                </div>
+                <div class="stability-track">
+                  <div class="stability-fill" id="stabilityFill"></div>
+                </div>
+              </div>
+            </div>
+            <div class="sentence-box">
+              <div class="sentence-box-label">Your message</div>
+              <div class="sentence-text empty" id="sentenceText">Start signing...</div>
+            </div>
+            <div class="demo-controls">
+              <button class="ctrl-btn" onclick="sendCmd('space')">Space</button>
+              <button class="ctrl-btn" onclick="sendCmd('backspace')">⌫ Delete</button>
+              <button class="ctrl-btn danger" onclick="sendCmd('clear')">Clear</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-hint">
+          💡 Show your hand clearly · Hold a sign steady for ~1 second to type the letter
+        </div>
+      </div>
+    </div>
+  `;
 <section class="hero" id="welcome">
   <div class="hero-text">
     <span class="hero-tag">AI-powered ASL recognition</span>
@@ -141,7 +369,7 @@ document.querySelector('#app').innerHTML = `
     </div>
   </div>
   <div class="hero-visual">
-    <img src="/welcome.png" alt="Illustration of ASL" class="welcomeimg">
+    <img src="welcome.png" alt="Illustration of ASL" class="welcomeimg">
   </div>
 </section>
 
@@ -153,7 +381,7 @@ document.querySelector('#app').innerHTML = `
     <p>However, translators cannot be by your side 24/7, and their lack of presence in everyday life can be felt. For example, it might be difficult for someone with hearing loss to ask where an item is located in the grocery store. That's why an ASL translator website/app would be an incredibly useful tool to deaf people, because their phone would act as their personal translator. This would allow deaf people to have more fluid conversations with others, reducing the problem of language barriers between hearing and non-hearing individuals.</p>
   </div>
   <div class="hero-visual">
-    <img src="/why.png" alt="Illustration of ASL communication" class="whyimg">
+    <img src="why.png" alt="Illustration of ASL communication" class="whyimg">
   </div>
   
 </section>
