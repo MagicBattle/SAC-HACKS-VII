@@ -8,7 +8,7 @@ from src.models.sign_model import ASLClassifier, ASLDynamicClassifier
 from src.data.preprocess import normalize_landmarks, normalize_both_hands
 
 app = Flask("ASL Recognition API",
-            template_folder=os.path.join(os.path.dirname(__file__), "..", "..", "templates"))
+            template_folder=os.path.join(os.path.dirname(__file__), "..", "..", "frontend"))
 app.config["DESCRIPTION"] = "Real-time ASL Alphabet Classification with Motion + Phrases"
 CORS(app)
 
@@ -20,7 +20,7 @@ if os.path.exists(static_model_path):
 static_model.eval()
 
 # --- Dynamic model (J, Z, Hello, Goodbye, Please, Thank You) ---
-DYNAMIC_CLASSES = ['J', 'Z', 'Hello', 'Goodbye', 'Please', 'Thank You', 'My name is', 'I love you']
+DYNAMIC_CLASSES = ['J', 'Z', 'Hello', 'Goodbye', 'Please', 'Thank You', 'My', 'name', 'I', 'love', 'you']
 SEQ_LEN = 30
 dynamic_model = None
 dynamic_model_path = "models/best_dynamic_model.pth"

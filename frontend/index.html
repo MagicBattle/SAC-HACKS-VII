@@ -144,6 +144,9 @@
         let frameRing = [];                   // rolling buffer of {left_hand, right_hand} for dynamic model
         let frameCount = 0;
         let dynamicPending = false;
+        let motionActive = false;                 // true when hand motion is detected (suppresses static adds)
+        let motionFrames = 0;                     // consecutive frames with motion
+        const MOTION_HOLD_FRAMES = 5;             // frames of motion before suppressing static
 
         // Current prediction
         let currentBest = { prediction: '--', confidence: 0 };
@@ -283,6 +286,12 @@
         }
 
         function handleHoldToAdd(letter, confidence) {
+            // Suppress static letter additions when motion is detected (phrase in progress)
+            if (motionActive) {
+                holdState.consecutiveCount = 0;
+                holdState.consecutiveLetter = '';
+                return;
+            }
             if (confidence < CONFIDENCE_THRESHOLD) {
                 holdState.consecutiveCount = 0;
                 holdState.consecutiveLetter = '';
@@ -338,12 +347,26 @@
                 frameRing.push({ left_hand: leftHand, right_hand: rightHand });
                 if (frameRing.length > MOTION_SEQ_LEN) frameRing.shift();
                 frameCount++;
-                updateMotionUI(frameRing.length >= MOTION_SEQ_LEN, frameRing.length);
+
+                // Track motion state to suppress static predictions during phrases
+                const isMoving = detectMotion(primaryHand);
+                if (isMoving) {
+                    motionFrames++;
+                    if (motionFrames >= MOTION_HOLD_FRAMES) {
+                        motionActive = true;
+                        holdState = { consecutiveLetter: '', consecutiveCount: 0, addCooldown: 0 };
+                    }
+                } else {
+                    motionFrames = Math.max(0, motionFrames - 1);
+                    if (motionFrames === 0) motionActive = false;
+                }
+
+                updateMotionUI(motionActive || frameRing.length >= MOTION_SEQ_LEN, frameRing.length);
 
                 const now = Date.now();
                 if (now - lastPredictionTime > PREDICT_INTERVAL_MS) {
                     lastPredictionTime = now;
-                    // Static: single hand (21 landmarks)
+                    // Static: single hand (21 landmarks) — only add to phrase if not in motion
                     sendStaticPrediction(primaryHand);
 
                     // Dynamic: two-hand frames
