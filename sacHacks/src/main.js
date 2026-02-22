@@ -141,7 +141,7 @@ document.querySelector('#app').innerHTML = `
     </div>
   </div>
   <div class="hero-visual">
-    <img src="welcome.png" alt="Illustration of ASL" class="welcomeimg">
+    <img src="/welcome.png" alt="Illustration of ASL" class="welcomeimg">
   </div>
 </section>
 
@@ -153,7 +153,7 @@ document.querySelector('#app').innerHTML = `
     <p>However, translators cannot be by your side 24/7, and their lack of presence in everyday life can be felt. For example, it might be difficult for someone with hearing loss to ask where an item is located in the grocery store. That's why an ASL translator website/app would be an incredibly useful tool to deaf people, because their phone would act as their personal translator. This would allow deaf people to have more fluid conversations with others, reducing the problem of language barriers between hearing and non-hearing individuals.</p>
   </div>
   <div class="hero-visual">
-    <img src="why.png" alt="Illustration of ASL communication" class="whyimg">
+    <img src="/why.png" alt="Illustration of ASL communication" class="whyimg">
   </div>
   
 </section>

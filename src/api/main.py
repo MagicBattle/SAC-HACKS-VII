@@ -86,6 +86,15 @@ def landing_assets(filename):
     return send_from_directory(os.path.join(LANDING_DIR, "assets"), filename)
 
 
+@app.route("/<path:filename>")
+def landing_static(filename):
+    """Serve static files (images, icons) from the built landing page."""
+    filepath = os.path.join(LANDING_DIR, filename)
+    if os.path.isfile(filepath):
+        return send_from_directory(LANDING_DIR, filename)
+    abort(404)
+
+
 @app.route("/collect", methods=["GET"])
 def collect():
     """Serve the data collection page."""
