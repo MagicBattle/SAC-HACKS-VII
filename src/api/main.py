@@ -7,7 +7,7 @@ import os
 from src.models.sign_model import ASLClassifier, ASLDynamicClassifier
 from src.data.preprocess import normalize_landmarks, normalize_both_hands
 
-LANDING_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "sacHacks", "dist"))
+LANDING_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "."))
 
 app = Flask("ASL Recognition API",
             template_folder=os.path.join(os.path.dirname(__file__), "..", "..", "frontend"),
