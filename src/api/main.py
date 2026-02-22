@@ -19,15 +19,20 @@ if os.path.exists(static_model_path):
     static_model.load_state_dict(torch.load(static_model_path, map_location='cpu'))
 static_model.eval()
 
-# --- Dynamic model (J, Z, Hello, Goodbye, Please, Thank You) ---
-DYNAMIC_CLASSES = ['J', 'Z', 'Hello', 'Goodbye', 'Please', 'Thank You', 'My', 'name', 'I', 'love', 'you']
+# --- Dynamic model (J, Z, Hello, Goodbye, Thank You, My, name, I, love, you) ---
+# Labels: 0=J, 1=Z, 2=Hello, 3=Goodbye, 4=unused, 5=Thank You, 6=My, 7=name, 8=I, 9=love, 10=you
+DYNAMIC_CLASSES = ['J', 'Z', 'Hello', 'Goodbye', '(unused)', 'Thank You', 'My', 'name', 'I', 'love', 'you']
 SEQ_LEN = 30
 dynamic_model = None
 dynamic_model_path = "models/best_dynamic_model.pth"
 if os.path.exists(dynamic_model_path):
-    dynamic_model = ASLDynamicClassifier(num_classes=len(DYNAMIC_CLASSES))
-    dynamic_model.load_state_dict(torch.load(dynamic_model_path, map_location='cpu'))
-    dynamic_model.eval()
+    try:
+        dynamic_model = ASLDynamicClassifier(num_classes=len(DYNAMIC_CLASSES))
+        dynamic_model.load_state_dict(torch.load(dynamic_model_path, map_location='cpu'))
+        dynamic_model.eval()
+    except RuntimeError as e:
+        print(f"Warning: Could not load dynamic model (class mismatch). Retrain needed. Error: {e}")
+        dynamic_model = None
 
 classes = [chr(i) for i in range(ord('A'), ord('Z') + 1)]
 
