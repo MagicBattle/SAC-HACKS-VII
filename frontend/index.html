@@ -172,6 +172,8 @@
                 : 'Perform a gesture — phrases are detected automatically';
             // Reset state on mode switch
             holdState = { consecutiveLetter: '', consecutiveCount: 0, addCooldown: 0 };
+            dynamicHold = { prediction: '', count: 0 };
+            lastAddedDynamic = '';
             frameRing = [];
             frameCount = 0;
             motionActive = false;
@@ -272,6 +274,9 @@
         }
 
         let lastDynamicAdd = 0;
+        let dynamicHold = { prediction: '', count: 0 };  // hold-to-add for dynamic
+        let lastAddedDynamic = '';                         // prevent same sign added twice in a row
+        const DYNAMIC_HOLD_TO_ADD = 2;                     // consecutive matching predictions needed
 
         async function sendDynamicPrediction(frames) {
             if (dynamicPending) return; // don't stack requests
@@ -287,11 +292,27 @@
                 if (data.confidence > CONFIDENCE_THRESHOLD) {
                     showPrediction(data.prediction, data.confidence);
 
-                    // Add to phrase immediately (with 3s cooldown to prevent spam)
+                    // Hold-to-add: require DYNAMIC_HOLD_TO_ADD consecutive matching predictions
+                    if (data.prediction === dynamicHold.prediction) {
+                        dynamicHold.count++;
+                    } else {
+                        dynamicHold.prediction = data.prediction;
+                        dynamicHold.count = 1;
+                    }
+
                     const now = Date.now();
-                    if (now - lastDynamicAdd > 3000) {
+                    const cooldownOk = now - lastDynamicAdd > 2000;
+                    const holdOk = dynamicHold.count >= DYNAMIC_HOLD_TO_ADD;
+                    const notDuplicate = data.prediction !== lastAddedDynamic;
+
+                    if (holdOk && cooldownOk && notDuplicate) {
                         lastDynamicAdd = now;
+                        lastAddedDynamic = data.prediction;
                         addLetterToPhrase(data.prediction);
+                        // Clear buffer so the model must see fresh frames for next sign
+                        frameRing = [];
+                        frameCount = 0;
+                        dynamicHold = { prediction: '', count: 0 };
                         // Flash effect
                         predictionDiv.style.textShadow = '0 0 20px var(--success)';
                         setTimeout(() => { predictionDiv.style.textShadow = ''; }, 300);
@@ -299,6 +320,10 @@
 
                     motionIndicator.innerText = `Detected: ${data.prediction}`;
                     motionIndicator.style.color = 'var(--success)';
+                } else {
+                    // Low confidence — reset hold state and allow re-adding previous sign
+                    dynamicHold = { prediction: '', count: 0 };
+                    lastAddedDynamic = '';
                 }
             } catch (e) { console.error('dynamic predict error', e); }
             finally { dynamicPending = false; }
