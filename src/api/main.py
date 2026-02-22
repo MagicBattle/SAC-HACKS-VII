@@ -73,7 +73,7 @@ def _parse_landmarks(landmarks):
 @app.route("/", methods=["GET"])
 def index():
     """Serve the main ASL Translator frontend."""
-    return render_template("index.html")
+    return render_template("asl_translator.html")
 
 
 @app.route("/collect", methods=["GET"])

@@ -1,4 +1,3 @@
-
 import os
 import numpy as np
 import torch
@@ -113,7 +112,7 @@ def train_dynamic(epochs=100, batch_size=16, lr=0.001, save_dir="models", seq_le
     val_loader = DataLoader(val_dataset, batch_size=effective_bs)
     
     model = ASLDynamicClassifier(num_classes=num_classes)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5)
     
