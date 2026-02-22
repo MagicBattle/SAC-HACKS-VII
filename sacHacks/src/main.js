@@ -136,7 +136,7 @@ document.querySelector('#app').innerHTML = `
     <h1>Hands that <em>speak</em>,<br>words that connect.</h1>
     <p>SignFlow uses computer vision to translate American Sign Language into text. Live translation in your browser. Explore the rich history and beauty of ASL, then try the translator yourself.</p>
     <div class="hero-btns">
-      <button class="btn-primary" onclick="openDemo()">Try the translator ↓</button>
+      <a href="/translator" class="btn-primary">Try the translator ↓</a>
       <a href="#history" class="btn-secondary">ASL History ↓</a>
     </div>
   </div>
@@ -302,7 +302,7 @@ document.querySelector('#app').innerHTML = `
   <span class="section-tag">Live Demo</span>
   <h2 class="section-title">Try it yourself</h2>
   <p class="section-sub">Point your webcam at your hand and sign a letter. Our AI will recognize it in real time and build your message letter by letter. It will only work with certain phrases that we've trained the model on, but should work for each letter.</p>
-  <button class="try-btn" onclick="openDemo()">✋ Open the translator</button>
+  <a href="/translator" class="try-btn">✋ Open the translator</a>
 </section>
 
 <!-- ── Footer ─────────────────────────────────────────────────────────────── -->

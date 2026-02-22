@@ -6,3 +6,4 @@ onnx
 onnxruntime
 pytest
 scikit-learn
+vite

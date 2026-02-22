@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, abort, render_template
+from flask import Flask, jsonify, request, abort, render_template, send_from_directory
 from flask_cors import CORS
 from collections import deque
 import torch
@@ -7,8 +7,12 @@ import os
 from src.models.sign_model import ASLClassifier, ASLDynamicClassifier
 from src.data.preprocess import normalize_landmarks, normalize_both_hands
 
+LANDING_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "sacHacks", "dist"))
+
 app = Flask("ASL Recognition API",
-            template_folder=os.path.join(os.path.dirname(__file__), "..", "..", "frontend"))
+            template_folder=os.path.join(os.path.dirname(__file__), "..", "..", "frontend"),
+            static_folder=LANDING_DIR,
+            static_url_path="/landing")
 app.config["DESCRIPTION"] = "Real-time ASL Alphabet Classification with Motion + Phrases"
 CORS(app)
 
@@ -72,14 +76,26 @@ def _parse_landmarks(landmarks):
 
 @app.route("/", methods=["GET"])
 def index():
-    """Serve the main ASL Translator frontend."""
-    return render_template("asl_translator.html")
+    """Serve the main landing page (built Vite app)."""
+    return send_from_directory(LANDING_DIR, "index.html")
+
+
+@app.route("/assets/<path:filename>")
+def landing_assets(filename):
+    """Serve built JS/CSS assets for the landing page."""
+    return send_from_directory(os.path.join(LANDING_DIR, "assets"), filename)
 
 
 @app.route("/collect", methods=["GET"])
 def collect():
     """Serve the data collection page."""
     return render_template("collect.html")
+
+
+@app.route("/translator", methods=["GET"])
+def translator():
+    """Serve the ASL Translator frontend."""
+    return render_template("asl_translator.html")
 
 
 @app.route("/health", methods=["GET"])
