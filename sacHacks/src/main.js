@@ -134,10 +134,10 @@ document.querySelector('#app').innerHTML = `
   <div class="hero-text">
     <span class="hero-tag">AI-powered ASL recognition</span>
     <h1>Hands that <em>speak</em>,<br>words that connect.</h1>
-    <p>SignBridge uses computer vision to translate American Sign Language into text — live, in your browser. Explore the rich history and beauty of ASL, then try the translator yourself.</p>
+    <p>SignFlow uses computer vision to translate American Sign Language into text. Live translation in your browser. Explore the rich history and beauty of ASL, then try the translator yourself.</p>
     <div class="hero-btns">
-      <button class="btn-primary" onclick="openDemo()">Try the translator →</button>
-      <a href="#history" class="btn-secondary">Learn about ASL ↓</a>
+      <button class="btn-primary" onclick="openDemo()">Try the translator ↓</button>
+      <a href="#history" class="btn-secondary">ASL History ↓</a>
     </div>
   </div>
   <div class="hero-visual">
@@ -149,7 +149,8 @@ document.querySelector('#app').innerHTML = `
   <div class="hero-text">
     <span class="section-tag">Why</span>
     <h2 class="section-title">Why ASL?</h2>
-    <p class="section-sub">Many deaf people rely on translators for communication with others. For example, hospitals provide translators free of charge to assist in translating your symptoms to the doctor and relaying back what the doctor says. These translators make the situation of conversing with others manageable. However, translators cannot be by your side 24/7, and their lack of presence in everyday life can be felt. For example, it might be difficult for someone with hearing loss to ask where an item is located in the grocery store. That's why an ASL translator website/app would be an incredibly useful tool to deaf people, because their phone would act as their personal translator. This would allow deaf people to have more fluid conversations with others, reducing the problem of language barriers between hearing and non-hearing individuals.</p>
+    <p class="section-sub">Many deaf people rely on translators for communication with others. For example, hospitals provide translators free of charge to assist in translating your symptoms to the doctor and relaying back what the doctor says. These translators make the situation of conversing with others manageable.</p>
+    <p>However, translators cannot be by your side 24/7, and their lack of presence in everyday life can be felt. For example, it might be difficult for someone with hearing loss to ask where an item is located in the grocery store. That's why an ASL translator website/app would be an incredibly useful tool to deaf people, because their phone would act as their personal translator. This would allow deaf people to have more fluid conversations with others, reducing the problem of language barriers between hearing and non-hearing individuals.</p>
   </div>
   <div class="hero-visual">
     <img src="why.png" alt="Illustration of ASL communication" class="whyimg">
@@ -161,7 +162,7 @@ document.querySelector('#app').innerHTML = `
 <section id="history">
   <span class="section-tag">Background</span>
   <h2 class="section-title">A language with deep roots</h2>
-  <p class="section-sub">American Sign Language is a complete, natural language with its own grammar, syntax, and culture — not simply a signed version of English.</p>
+  <p class="section-sub">American Sign Language is a complete, natural language with its own grammar, syntax, and culture. It's not simply a signed version of English.</p>
 
   <div class="history-grid">
     <div class="timeline">
@@ -170,7 +171,7 @@ document.querySelector('#app').innerHTML = `
         <div class="timeline-content">
           <div class="timeline-dot"></div>
           <h4>America's First School for the Deaf</h4>
-          <p>Thomas Hopkins Gallaudet and Laurent Clerc founded the American School for the Deaf in Hartford, Connecticut — the birthplace of ASL.</p>
+          <p>Thomas Hopkins Gallaudet and Laurent Clerc founded the American School for the Deaf in Hartford. Connecticut is the birthplace of ASL.</p>
         </div>
       </div>
       <div class="timeline-item">
@@ -178,7 +179,7 @@ document.querySelector('#app').innerHTML = `
         <div class="timeline-content">
           <div class="timeline-dot"></div>
           <h4>Gallaudet University Founded</h4>
-          <p>The world's only university designed to be accessible to deaf and hard-of-hearing students was established in Washington, D.C.</p>
+          <p>In 1864, Gallaudet University was established in Washington, D.C., becoming the world’s only university specifically designed for deaf and hard-of-hearing students.</p>
         </div>
       </div>
       <div class="timeline-item">
@@ -186,7 +187,7 @@ document.querySelector('#app').innerHTML = `
         <div class="timeline-content">
           <div class="timeline-dot"></div>
           <h4>ASL Recognized as a Language</h4>
-          <p>Linguist William Stokoe published research proving ASL is a fully structured linguistic system — not simply gestures or mime.</p>
+          <p>Linguist William Stokoe published research proving ASL is a fully structured linguistic system and not simply gestures or mime.</p>
         </div>
       </div>
       <div class="timeline-item">
@@ -206,7 +207,7 @@ document.querySelector('#app').innerHTML = `
       </div>
       <div class="stat-card">
         <div class="stat-number">3rd</div>
-        <div class="stat-label">Most widely used language in the United States</div>
+        <div class="stat-label">Often cited as the 3rd most used language in the U.S</div>
       </div>
       <div class="stat-card">
         <div class="stat-number">200+</div>
@@ -214,7 +215,7 @@ document.querySelector('#app').innerHTML = `
       </div>
       <div class="stat-card accent">
         <div class="stat-number">~15%</div>
-        <div class="stat-label">Of the world's population lives with some degree of hearing loss — that's over 1 billion people globally</div>
+        <div class="stat-label">Of the world's population lives with some degree of hearing loss. That's over 1 billion people globally</div>
       </div>
     </div>
   </div>
@@ -223,8 +224,8 @@ document.querySelector('#app').innerHTML = `
 <!-- ── Alphabet Section ───────────────────────────────────────────────────── -->
 <section id="alphabet">
   <span class="section-tag">The Alphabet</span>
-  <h2 class="section-title">24 letters, infinite expression</h2>
-  <p class="section-sub">The ASL manual alphabet represents each letter with a distinct handshape. J and Z use motion and are not shown here.</p>
+  <h2 class="section-title">26 letters, infinite expression</h2>
+  <p class="section-sub">The ASL manual alphabet represents each letter with a distinct handshape. J and Z use motion compared to the rest.</p>
 
   <div class="alphabet-grid">
     <div class="alpha-card"><span class="hand"></span><div class="ltr">A</div><div class="desc">Fist, thumb to side</div></div>
@@ -235,6 +236,7 @@ document.querySelector('#app').innerHTML = `
     <div class="alpha-card"><span class="hand"></span><div class="ltr">F</div><div class="desc">Index & thumb touch</div></div>
     <div class="alpha-card"><span class="hand"></span><div class="ltr">G</div><div class="desc">Index & thumb point</div></div>
     <div class="alpha-card"><span class="hand"></span><div class="ltr">H</div><div class="desc">Two fingers sideways</div></div>
+    <div class="alpha-card"><span class="hand"></span><div class="ltr">J</div><div class="desc">Pinky draws a J in the air</div></div>
     <div class="alpha-card"><span class="hand"></span><div class="ltr">I</div><div class="desc">Pinky up</div></div>
     <div class="alpha-card"><span class="hand"></span><div class="ltr">K</div><div class="desc">Index, middle + thumb</div></div>
     <div class="alpha-card"><span class="hand"></span><div class="ltr">L</div><div class="desc">L-shape index & thumb</div></div>
@@ -251,6 +253,7 @@ document.querySelector('#app').innerHTML = `
     <div class="alpha-card"><span class="hand"></span><div class="ltr">W</div><div class="desc">3 fingers spread up</div></div>
     <div class="alpha-card"><span class="hand"></span><div class="ltr">X</div><div class="desc">Index finger hooked</div></div>
     <div class="alpha-card"><span class="hand"></span><div class="ltr">Y</div><div class="desc">Pinky & thumb out</div></div>
+    <div class="alpha-card"><span class="hand"></span><div class="ltr">Z</div><div class="desc">Index finger draws a Z</div></div>
   </div>
 </section>
 
@@ -269,12 +272,12 @@ document.querySelector('#app').innerHTML = `
     <div class="tip-card">
       <div class="tip-num">02</div>
       <h3>Immerse yourself in Deaf culture</h3>
-      <p>ASL is deeply tied to culture. Watch ASL videos, attend Deaf events, and connect with the Deaf community — language learning accelerates through real interaction.</p>
+      <p>ASL is deeply tied to culture. Watch ASL videos, attend Deaf events, and connect with the Deaf community. Learning the language accelerates through real interaction with others.</p>
     </div>
     <div class="tip-card">
       <div class="tip-num">03</div>
       <h3>Focus on clarity, not speed</h3>
-      <p>Beginners often rush. Slow down and ensure each handshape is clean and distinct. Speed comes naturally with time; bad habits formed early are hard to unlearn.</p>
+      <p>Beginners often rush. Slow down and ensure each handshape is clean and distinct. Speed comes naturally with time and bad habits formed early are hard to unlearn.</p>
     </div>
     <div class="tip-card">
       <div class="tip-num">04</div>
@@ -284,12 +287,12 @@ document.querySelector('#app').innerHTML = `
     <div class="tip-card">
       <div class="tip-num">05</div>
       <h3>Practice every single day</h3>
-      <p>Even 10 minutes of daily practice beats a 2-hour weekly session. Muscle memory is built through repetition — short consistent sessions cement signs far more effectively.</p>
+      <p>Even 10 minutes of daily practice beats a 2-hour weekly session. Muscle memory is built through repetition, so short consistent sessions cement signs far more effectively.</p>
     </div>
     <div class="tip-card">
       <div class="tip-num">06</div>
       <h3>Be patient and embrace mistakes</h3>
-      <p>Every fluent signer made thousands of errors on the way there. The Deaf community is famously welcoming to learners — don't let fear of mistakes stop you from trying.</p>
+      <p>Every fluent signer made thousands of errors on the way there. The Deaf community is famously welcoming to learners, so don't let fear of mistakes stop you from trying.</p>
     </div>
   </div>
 </section>
@@ -298,7 +301,7 @@ document.querySelector('#app').innerHTML = `
 <section id="demo">
   <span class="section-tag">Live Demo</span>
   <h2 class="section-title">Try it yourself</h2>
-  <p class="section-sub">Point your webcam at your hand and sign a letter. Our AI will recognize it in real time and build your message letter by letter.</p>
+  <p class="section-sub">Point your webcam at your hand and sign a letter. Our AI will recognize it in real time and build your message letter by letter. It will only work with certain phrases that we've trained the model on, but should work for each letter.</p>
   <button class="try-btn" onclick="openDemo()">✋ Open the translator</button>
 </section>
 
