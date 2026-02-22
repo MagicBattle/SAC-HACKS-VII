@@ -45,7 +45,7 @@ function handleOverlayClick(e) {
 async function fetchPrediction() {
   try {
     const API = "https://sac-hacks-vii.onrender.com"
-    const res  = await fetch("${API}/prediction");
+    const res  = await fetch(`${API}/prediction`);
     const data = await res.json();
     updateUI(data);
   } catch (e) {
